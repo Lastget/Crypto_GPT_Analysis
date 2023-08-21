@@ -1,4 +1,6 @@
 # GPT_Stock_Analysis
+  I want to save time analyzing stocks.  This tool is meant to provide information to help you in investing stocks.            
+
 ## Abstract
 Give GPT a stock ticker. 
 It will: 
@@ -10,7 +12,10 @@ It will:
 
 ## Example 
 Input: DIS 
-Output: 
+![Stock App](main.png)
+![Stats App](stats.png)
+![Sum App](conclude.png)
+
 
 
 
