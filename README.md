@@ -1,5 +1,6 @@
 # GPT_Stock_Analysis
-  I want to save time analyzing stocks.  This tool is meant to provide information to help you in investing stocks.            
+  I want to save time analyzing stocks.  This tool is meant to provide information to help you in investing stocks.  <br />  
+  The tool is built with GPT, Streamlit, Langchain, and Yahoo Finance. 
 
 ## Abstract
 Give GPT a stock ticker. 
