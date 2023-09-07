@@ -5,7 +5,6 @@ from bs4 import BeautifulSoup
 import re
 import requests
 import warnings
-import yfinance as yf
 
 import langchain
 from langchain import PromptTemplate 
@@ -31,31 +30,33 @@ def get_openai_api_key():
     input_text = st.text_input(label="OpenAI API Key (or set it as .env variable)",  placeholder="Ex: sk-2twmA8tfCb8un4...", key="openai_api_key_input")
     return input_text
 
+# check Coinbase key 
+
 # Start streamlit 
-st.set_page_config(page_title="Stock Analysis", page_icon="🤑")
+st.set_page_config(page_title="Crypto Analysis", page_icon="🤑")
 
 # Start top information 
-st.header("GPT Stock Analysis 🤑")
+st.header("GPT Crypto Analysis 🤑")
 
-st.markdown("You want to save time analyse a stock? This tool is meant to help you decide whether to buy a stock or not.\
+st.markdown("You want to save time analyze a cryptocurrency? This tool is meant to help you decide whether to buy a crypto or not.\
             \n\nThis tool is powered by [BeautifulSoup](https://beautiful-soup-4.readthedocs.io/en/latest/#), [markdownify](https://pypi.org/project/markdownify/), [LangChain](https://langchain.com/), and [OpenAI](https://openai.com)" \
             )
 
 # Collect information about the person you want to research
-ticker = st.text_input(label="Ticker",  placeholder="Ex: DIS", key="ticker")
+currency = st.text_input(label="currency",  placeholder="Ex: ETH", key="currency")
 
-# Fetch stock data from Yahoo Finance
-def get_stock_price(ticker,history=5):
+# Fetch stock data from Coinbase 
+def get_stock_price(currency,history=5):
     ''' 
       input: 
-        - ticker 
+        - currency 
         - history: how many days of stock data to look at.  
       output:
         - close price for the stock -> (str)
     '''
     # Avoid rate limit error
     # time.sleep(4) 
-    stock = yf.Ticker(ticker)
+    stock = yf.currency(currency)
     df = stock.history(period="1y")
     df=df[["Close"]]
     # Get the date 
@@ -73,10 +74,10 @@ def get_stock_str(df):
     return df_str
 
 # Script to scrap top5 google news for given company name
-def get_recent_stock_news(ticker):
+def get_recent_stock_news(currency):
     # time.sleep(4) #To avoid rate limit error
     texts = []
-    search_term = ticker + ' news'
+    search_term = currency + ' news'
     # get links
     links = search(search_term, num_results=5, lang='en')
     headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'}
@@ -116,9 +117,9 @@ def get_recent_stock_news(ticker):
   
     return news
 # Fetch financial statements from Yahoo Finance
-def get_financial_statements(ticker):
+def get_financial_statements(currency):
     # time.sleep(4) #To avoid rate limit error   
-    company = yf.Ticker(ticker)
+    company = yf.currency(currency)
     
     # get revenue, income, eps from latest quarterly income statement 
     income_stmt_table = company.quarterly_income_stmt.loc[['Total Revenue','Net Income','Diluted EPS']]
@@ -149,48 +150,48 @@ def split_news(info):
 
 # Custom stock prompt 
 map_prompt = """You are a helpful financial expert that aids a user in stock investment.
-Below is information about a stock {ticker}.
-Information will include news about {ticker}
-Your goal is to summerize the information below about {ticker} stock.
+Below is information about a stock {currency}.
+Information will include news about {currency}
+Your goal is to summerize the information below about {currency} stock.
 
-% START OF INFORMATION ABOUT {ticker}:
+% START OF INFORMATION ABOUT {currency}:
 {text}
-% END OF INFORMATION ABOUT {ticker}
+% END OF INFORMATION ABOUT {currency}
 
 Please respond with a summary based on the information above.
 
 YOUR RESPONSE:"""
 
-map_prompt_template = PromptTemplate(template=map_prompt, input_variables=["text", "ticker"])
+map_prompt_template = PromptTemplate(template=map_prompt, input_variables=["text", "currency"])
 
 # combine all document summaries.   
 combine_prompt = """
 You are a helpful financial expert that aids a user in stock investment.\
-Below is information about a stock {ticker}.\
+Below is information about a stock {currency}.\
 Information will include news, stock price, and financial statistics about the stock.\
 
 Generate a summary of the following information that includes the following elements:
-* The company name and ticker of the stock. 
+* The company name and currency of the stock. 
 * Three pros and three cons of investing the stock in bullet points. 
 * Advice for user to invest the stock or not. 
 The user is fully aware about the investment risk, dont include any kind of warning like 'It is recommended to conduct further research and analysis or consult with a financial advisor before making an investment decision' in the answer 
 
-% START OF INFORMATION ABOUT {ticker}:
+% START OF INFORMATION ABOUT {currency}:
 NEWS: {text}\
-{ticker}'s LATEST STOCK PRICE: {stock_price}\
-{ticker}'s FINANCIAL STATISTICS: {fin_stat}
-% END OF INFORMATION ABOUT {ticker}
+{currency}'s LATEST STOCK PRICE: {stock_price}\
+{currency}'s FINANCIAL STATISTICS: {fin_stat}
+% END OF INFORMATION ABOUT {currency}
 
 YOUR RESPONSE:"""
-combine_prompt_template = PromptTemplate(template=combine_prompt, input_variables=["text", "ticker",  "stock_price", "fin_stat"])
+combine_prompt_template = PromptTemplate(template=combine_prompt, input_variables=["text", "currency",  "stock_price", "fin_stat"])
 
 button_ind = st.button("*Generate Advice*", type='secondary', help="Click to generate stock analysis")
 
 
 # Checking to see if the button_ind is true. If so, this means the button was clicked and we should process the links
 if button_ind:
-    if not ticker:
-        st.warning('Please provide ticker', icon="⚠️")
+    if not currency:
+        st.warning('Please provide currency', icon="⚠️")
         st.stop()
     
     if not OPENAI_API_KEY:
@@ -202,12 +203,12 @@ if button_ind:
         OPENAI_API_KEY = get_openai_api_key()  
 
     # Go get your data
-    stock_df = get_stock_price(ticker) 
+    stock_df = get_stock_price(currency) 
     stock_price = get_stock_str(stock_df)
     st.markdown(f"#### Stock price: ")
     st.line_chart(stock_df, x='Date', y='Close')
 
-    stats, profit_margin, total_rev, net_income, diluted_eps, roe =  get_financial_statements(ticker)
+    stats, profit_margin, total_rev, net_income, diluted_eps, roe =  get_financial_statements(currency)
     st.markdown(f"#### Stock Stats: ")
     st.markdown(f"##### Profit margin: ")
     st.write(profit_margin) 
@@ -222,7 +223,7 @@ if button_ind:
 
     
     st.write('Getting latest news...')  
-    news = get_recent_stock_news(ticker)
+    news = get_recent_stock_news(currency)
     text = split_news(news)   
 
     # Write sequential chain sumemrize the webpage and combine with other stats
@@ -241,7 +242,7 @@ if button_ind:
 
     #Pass our user information we gathered, the persons name and the response type from the radio button
     output = chain({"input_documents": text, # The seven docs that were created before
-                    "ticker": ticker,
+                    "currency": currency,
                     "fin_stat": stats,
                     "stock_price": stock_price,
                     })
